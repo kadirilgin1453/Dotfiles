@@ -89,8 +89,11 @@ class DmenuHotKeys(object):
 
     def get_parser(self, app):
         app_parser_name = CONFIG[app]['parser']
-        parser = [subcls for subcls in BaseConfigParser.__subclasses__() if subcls.__name__ == app_parser_name][0]
-        return parser
+        return [
+            subcls
+            for subcls in BaseConfigParser.__subclasses__()
+            if subcls.__name__ == app_parser_name
+        ][0]
 
     def get_config_file_content(self):
         """
@@ -112,10 +115,9 @@ class DmenuHotKeys(object):
         regex_search = compile(r"^.*{start}([^%]+){end}.*$".format(
             start=START_LINE_SEARCHING_PATTERN, end=END_LINE_SEARCHING_PATTERN))
         content_lines = content.splitlines()
-        entries = list()
+        entries = []
         for index, line in enumerate(content_lines):
-            match = regex_search.match(line)
-            if match:
+            if match := regex_search.match(line):
                 info = match.group(1).strip()
                 hotkey_line = content_lines[index + 1]
                 hotkey = self.parser.parse_hotkey(hotkey_line)
@@ -131,22 +133,21 @@ class DmenuHotKeys(object):
         if not entries:
             return ""
 
-        longest_hotkey = max(set(len(entry[0]) for entry in entries))
+        longest_hotkey = max({len(entry[0]) for entry in entries})
         dots_length = longest_hotkey + ADDITIONAL_DOTS
-        output = list()
-        for hotkey, info in entries:
-            output.append("{hotkey} {dots} {info}".format(
-                hotkey=hotkey,
-                dots="." * (dots_length - len(hotkey)),
-                info=info
-            ))
+        output = [
+            "{hotkey} {dots} {info}".format(
+                hotkey=hotkey, dots="." * (dots_length - len(hotkey)), info=info
+            )
+            for hotkey, info in entries
+        ]
         return "\n".join(output)
 
 
 if __name__ == "__main__":
     app = sys.argv[1]
     if app not in SUPPORTED_APPS:
-        print("This app \"{}\" is not supported, try these {}".format(app, SUPPORTED_APPS))
+        print(f'This app \"{app}\" is not supported, try these {SUPPORTED_APPS}')
     else:
         hot_keys = DmenuHotKeys(app)
         # subprocess piping was created based on: https://stackoverflow.com/a/4846923
